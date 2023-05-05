@@ -35,6 +35,8 @@ class GloveApp(tk.Tk):
                 self.update_countdown(*message[1])
             elif message[0] == "update_current_letter":
                 self.update_current_letter(*message[1])
+            elif message[0] == "update_graph":
+                self.update_graph(*message[1], *message[2])
             self.message_queue.task_done()
             
         self.after(100, self.process_queue)
@@ -49,44 +51,33 @@ class GloveApp(tk.Tk):
 
 
     def create_widgets(self):
+
+        #colomn 0 ---------------------------------------------------------------------------------------------------------
+
         # Graphs <---------------------------------------------------------------
         # Frame for the graph #1
         graph_frame = ttk.Frame(self)
         graph_frame.grid(row=0, column=0, padx=10, pady=10)
 
         # Creating the 2D graph #1
-        fig = Figure(figsize=(5, 4), dpi=100)
-        self.ax = fig.add_subplot(111)
-
-        canvas = FigureCanvasTkAgg(fig, master=graph_frame)
-        canvas.draw()
-        canvas.get_tk_widget().grid(row=0, column=0)
+        fig1 = Figure(figsize=(5, 4), dpi=100)
+        self.ax1 = fig1.add_subplot(111)
+        self.canvas1 = FigureCanvasTkAgg(fig1, master=graph_frame)
+        self.canvas1.draw()
+        self.canvas1.get_tk_widget().grid(row=0, column=0)
 
         # Frame for the graph #2
         graph_frame = ttk.Frame(self)
         graph_frame.grid(row=0, column=1, padx=10, pady=10)
 
         # Creating the 2D graph #2
-        fig = Figure(figsize=(5, 4), dpi=100)
-        self.ax = fig.add_subplot(111)
+        fig2 = Figure(figsize=(5, 4), dpi=100)
+        self.ax2 = fig2.add_subplot(111)
 
-        canvas = FigureCanvasTkAgg(fig, master=graph_frame)
-        canvas.draw()
-        canvas.get_tk_widget().grid(row=0, column=0)
+        self.canvas2 = FigureCanvasTkAgg(fig2, master=graph_frame)
+        self.canvas2.draw()
+        self.canvas2.get_tk_widget().grid(row=0, column=0)
         # ---------------------------------------------------------------------->
-
-        # Frame for the gesture
-        gesture_frame = ttk.Frame(self)
-        gesture_frame.grid(row=1, column=1, padx=10, pady=10, sticky=tk.N)
-
-        gesture_label = ttk.Label(gesture_frame, text="Perform Gesture:", font=("Helvetica", 14))
-        gesture_label.pack(side=tk.LEFT)
-
-        self.gesture_text = tk.StringVar()
-        self.gesture_text.set("None")
-
-        gesture_value_label = ttk.Label(gesture_frame, textvariable=self.gesture_text, font=("Helvetica", 14, "bold"))
-        gesture_value_label.pack(side=tk.LEFT)
 
         # Frame for the recording status
         recording_frame = ttk.Frame(self)
@@ -118,6 +109,34 @@ class GloveApp(tk.Tk):
         self.start_stop_button = ttk.Button(self, text="Start Automated Recording", command=self.toggle_automated_recording)
         self.start_stop_button.grid(row=3, column=0, pady=10)
 
+        #Error message
+        error_message_frame = ttk.Frame(self)
+        error_message_frame.grid(row=4, column=0, pady=10, sticky=tk.N)
+
+        self.error_message_label = tk.Label(error_message_frame, text = "Error:", font=("Helvetica", 10))
+        self.error_message_label.grid(row=0, column=0)
+
+        self.error_message_text = tk.StringVar()
+        self.error_message_text.set("None :))")
+
+        self.error_message_value_label = ttk.Label(error_message_frame, textvariable=self.error_message_text, font=("Helvetica", 10), foreground="green")
+        self.error_message_value_label.grid(row=0, column=1)
+
+        #column 1 ------------------------------------------------------------------------------------------------------
+
+        # Frame for the gesture
+        gesture_frame = ttk.Frame(self)
+        gesture_frame.grid(row=1, column=1, padx=10, pady=10, sticky=tk.N)
+
+        gesture_label = ttk.Label(gesture_frame, text="Perform Gesture:", font=("Helvetica", 14))
+        gesture_label.grid(row=0, column=0)
+
+        self.gesture_text = tk.StringVar()
+        self.gesture_text.set("None")
+
+        gesture_value_label = ttk.Label(gesture_frame, textvariable=self.gesture_text, font=("Helvetica", 14, "bold"))
+        gesture_value_label.grid(row=1, column=0)
+
         # Frame for the current letter
         current_letter_frame = ttk.Frame(self)
         current_letter_frame.grid(row=2, column=1, padx=10, pady=10, sticky=tk.N)
@@ -137,6 +156,28 @@ class GloveApp(tk.Tk):
 
         toggle_do_gestures_button = ttk.Checkbutton(self, text="Perform Gestures (uncheck for sentences)", variable=self.do_gestures)
         toggle_do_gestures_button.grid(row=3, column=1, padx=10, pady=10, sticky=tk.N)
+
+        # Toggle button for test mode (without esp)
+        self.test_mode = tk.BooleanVar()
+        self.test_mode.set(False)
+
+        toggle_test_mode_button = ttk.Checkbutton(self, text="Testing Mode (without ESP)", variable=self.test_mode)
+        toggle_test_mode_button.grid(row=4, column=1, padx=10, pady=10, sticky=tk.N)
+
+        #frame for buttons
+        button_frame = ttk.Frame(self)
+        button_frame.grid(row=5, column=1, pady=(20, 0))
+
+        # reset button
+        self.error_occured = False
+        reset_button = ttk.Button(button_frame, text="Reset", command=self.reset_recording, style="Reset.TButton")
+        reset_button.grid(row=0, column=0, padx=(0, 5))
+
+        # Save button
+        self.save_button = ttk.Button(button_frame, text="Save", command=self.save_recording, style="Save.TButton")
+        self.save_button.grid(row=0, column=1, padx=(5, 0))
+
+        #column 2 ------------------------------------------------------------------------------------------------------------
 
         # Change recording timings & repetition values & num words <----------------------------------------
         recording_time_label = ttk.Label(self, text="Recording Time (seconds):")
@@ -170,16 +211,6 @@ class GloveApp(tk.Tk):
         self.numWords_var.set(4)  # Default value
 
         # ----------------------------------------> Change recording timings & repetition values & num words
-
-        
-
-        # reset button
-        reset_button = ttk.Button(self, text="Reset", command=self.reset_recording, style="Reset.TButton")
-        reset_button.grid(row=8, column=1, sticky="w", pady=(20, 0))
-
-
-
-
 
 
 
@@ -228,7 +259,7 @@ class GloveApp(tk.Tk):
                     # data collection part here
 
                     self.message_queue.put(("update_recording_status", ("Recording", "red")))
-                    collect_data_thread = threading.Thread(target=partial(sensorDataCollection.collect_data, gesture, "data.csv", recording_time)) #start collecting data here
+                    collect_data_thread = threading.Thread(target=partial(sensorDataCollection.collect_data, self, gesture, "temp_data.csv", recording_time, self.test_mode.get(), self.display_error)) #start collecting data here
                     collect_data_thread.start() 
                     for i in range(int(recording_time) - 1, -1, -1):
                         if stop_recording.is_set():
@@ -278,7 +309,7 @@ class GloveApp(tk.Tk):
 
                     # data collection part here
                     self.message_queue.put(("update_recording_status", ("Recording", "red")))
-                    collect_data_thread = threading.Thread(target=partial(sensorDataCollection.collect_data, letter, "data.csv", recording_time)) #start collecting data here
+                    collect_data_thread = threading.Thread(target=partial(sensorDataCollection.collect_data, self, letter, "temp_data.csv", recording_time, self.test_mode.get(), self.display_error)) #start collecting data here
                     collect_data_thread.start() 
                     for i in range(int(recording_time) - 1, -1, -1):
                         if stop_recording.is_set():
@@ -312,7 +343,22 @@ class GloveApp(tk.Tk):
 
         self.message_queue.put(("update_recording_status", ("Recording Completed", "green")))
 
-        
+    def update_graph(self, button_value1, button_value2):
+        #graph 1 print
+        self.ax1.clear()
+        self.ax1.set_ylim(0, 2)
+        self.ax1.set_xlim(0, 2)
+        self.ax1.plot([1, 1], [0, button_value1], color="blue", linewidth=2)
+        self.ax1.set_title("Button Value")
+        self.canvas1.draw()
+
+        #graph 2 print
+        self.ax2.clear()
+        self.ax2.set_ylim(0, 2)
+        self.ax2.set_xlim(0, 2)
+        self.ax2.plot([1, 1], [0, button_value2], color="blue", linewidth=2)
+        self.ax2.set_title("Button Value")
+        self.canvas2.draw()
 
 
 
@@ -358,12 +404,6 @@ class GloveApp(tk.Tk):
         if not self.recording:
             self.recording = True
             self.stop_recording = threading.Event()
-
-            # # Display initial sentence before starting the recording
-            # if not self.do_gestures.get():
-            #     initial_sentence = self.get_sentence(word_count=2)
-            #     self.gesture_text.set(initial_sentence)
-
             self.recording_thread = threading.Thread(target=self.automated_recording, args=(self.stop_recording, self.do_gestures.get()))
             self.recording_thread.start()
             self.start_stop_button.config(text="Stop Automated Recording", style="Stop.TButton")
@@ -379,14 +419,50 @@ class GloveApp(tk.Tk):
         recording_thread.start()
 
     def reset_recording(self): #reset everything
-        self.recording = False
-        self.stop_recording.set()
-        self.recording_thread.join()
+        self.toggle_automated_recording
         self.start_stop_button.config(text="Start Automated Recording", style="Neutral.TButton")
+        self.save_button.config(style="Neutral.TButton")
         self.message_queue.put(("update_recording_status", ("Not Recording", "black")))
         self.message_queue.put(("update_countdown", ("",)))
         self.message_queue.put(("update_current_letter", ("",)))
         self.gesture_text.set("")
+
+        # Clear the graphs
+        self.ax1.cla()
+        self.ax2.cla()
+        self.canvas1.draw()
+        self.canvas2.draw()
+
+        # Clear the temporary file
+        open("temp_data.csv", 'w').close()
+
+        error = self.error_occured
+        if not error:
+            self.error_message_text.set("None :))")
+            self.error_message_value_label.config(foreground="green")
+
+    def save_recording(self): #save current record to main data
+        temp_filename = "temp_data.csv"
+        main_filename = "data.csv"
+        self.save_button.config(style="Start.TButton")
+
+        with open(temp_filename, 'r') as temp_file, open(main_filename, 'a') as main_file:
+            temp_file.readline()
+            for line in temp_file:
+                main_file.write(line)
+
+        # Clear the temporary file
+        open(temp_filename, 'w').close()
+
+    def display_error(self, error_message):
+        self.error_message_text.set(error_message)
+        if error_message != "None :))":
+            time.sleep(1)
+            self.toggle_automated_recording
+            self.error_message_value_label.config(foreground="red")
+            self.error_occured = True
+            self.reset_recording
+            self.error_occured = False
         
         
 
