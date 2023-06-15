@@ -11,7 +11,7 @@ from random import randint
 from functools import partial
 
 #import other files
-import sensorDataCollection
+import sensorDataCollection as SDC
 
 class GloveApp(tk.Tk):
     def __init__(self):
@@ -19,7 +19,7 @@ class GloveApp(tk.Tk):
         self.recording_thread = None
         self.recording = False
         self.title("Glove Training Data Collection")
-        self.geometry("1500x800")
+        self.geometry("1700x800")
         self.create_widgets()
         self.create_button_style()
         self.message_queue = Queue()
@@ -73,8 +73,23 @@ class GloveApp(tk.Tk):
         # Creating the 2D graph #2
         fig2 = Figure(figsize=(5, 4), dpi=100)
         self.ax2 = fig2.add_subplot(111)
-
+        
         self.canvas2 = FigureCanvasTkAgg(fig2, master=graph_frame)
+        self.canvas2.draw()
+        self.canvas2.get_tk_widget().grid(row=0, column=0)
+
+        #Frame for the graph #3
+        graph_frame = ttk.Frame(self)
+        graph_frame.grid(row=0, column=2, padx=10, pady=10)
+
+        # Creating the 2D graph #3
+        fig3 = Figure(figsize=(5, 4), dpi=100)
+        self.ax3 = fig3.add_subplot(111, projection='3d')
+        self.ax3.set_xlim([-2000, 2000])
+        self.ax3.set_ylim([-2000, 2000])
+        self.ax3.set_zlim([-2000, 2000])
+
+        self.canvas2 = FigureCanvasTkAgg(fig3, master=graph_frame)
         self.canvas2.draw()
         self.canvas2.get_tk_widget().grid(row=0, column=0)
         # ---------------------------------------------------------------------->
@@ -181,18 +196,18 @@ class GloveApp(tk.Tk):
 
         # Change recording timings & repetition values & num words <----------------------------------------
         recording_time_label = ttk.Label(self, text="Recording Time (seconds):")
-        recording_time_label.grid(row=1, column=2, sticky="e", pady=(20, 0))
+        recording_time_label.grid(row=1, column=2, padx=10, pady=10, sticky='e')
 
         self.recording_time = tk.StringVar(value=3)
         recording_time_spinbox = ttk.Spinbox(self, from_=1, to=10, textvariable=self.recording_time, wrap=True, width=5)
-        recording_time_spinbox.grid(row=1, column=3, sticky="w", pady=(20, 0))
+        recording_time_spinbox.grid(row=1, column=3, sticky="w", padx=10, pady=10)
 
         rest_time_label = ttk.Label(self, text="Rest Time (seconds):")
-        rest_time_label.grid(row=2, column=2, sticky="e")
+        rest_time_label.grid(row=2, column=2, sticky="e", padx=10, pady=10)
 
         self.rest_time = tk.StringVar(value=3)
         rest_time_spinbox = ttk.Spinbox(self, from_=1, to=10, textvariable=self.rest_time, wrap=True, width=5)
-        rest_time_spinbox.grid(row=2, column=3, sticky="w")
+        rest_time_spinbox.grid(row=2, column=3, sticky="w", padx=10, pady=10)
 
         repetitions_label = ttk.Label(self, text="Repetitions / # sentances:")
         repetitions_label.grid(row=3, column=2, padx=5, pady=5, sticky="e")
@@ -259,7 +274,7 @@ class GloveApp(tk.Tk):
                     # data collection part here
 
                     self.message_queue.put(("update_recording_status", ("Recording", "red")))
-                    collect_data_thread = threading.Thread(target=partial(sensorDataCollection.collect_data, self, gesture, "temp_data.csv", recording_time, self.test_mode.get(), self.display_error)) #start collecting data here
+                    collect_data_thread = threading.Thread(target=partial(SDC.collect_data, self, gesture, "temp_data.csv", recording_time, self.test_mode.get(), self.display_error)) #start collecting data here
                     collect_data_thread.start() 
                     for i in range(int(recording_time) - 1, -1, -1):
                         if stop_recording.is_set():
@@ -309,7 +324,7 @@ class GloveApp(tk.Tk):
 
                     # data collection part here
                     self.message_queue.put(("update_recording_status", ("Recording", "red")))
-                    collect_data_thread = threading.Thread(target=partial(sensorDataCollection.collect_data, self, letter, "temp_data.csv", recording_time, self.test_mode.get(), self.display_error)) #start collecting data here
+                    collect_data_thread = threading.Thread(target=partial(SDC.collect_data, self, letter, "temp_data.csv", recording_time, self.test_mode.get(), self.display_error)) #start collecting data here
                     collect_data_thread.start() 
                     for i in range(int(recording_time) - 1, -1, -1):
                         if stop_recording.is_set():
@@ -353,12 +368,9 @@ class GloveApp(tk.Tk):
         self.canvas1.draw()
 
         #graph 2 print
-        self.ax2.clear()
-        self.ax2.set_ylim(0, 2)
-        self.ax2.set_xlim(0, 2)
-        self.ax2.plot([1, 1], [0, button_value2], color="blue", linewidth=2)
-        self.ax2.set_title("Button Value")
-        self.canvas2.draw()
+        self.axs[0].clear()
+        self.axs[0].plot(time_data, accel_magnitude, 'o-')  # plotting the magnitude of acceleration
+        self.axs[0].set_ylabel('Acceleration Magnitude')
 
 
 
@@ -470,3 +482,4 @@ class GloveApp(tk.Tk):
 if __name__ == "__main__":
     app = GloveApp()
     app.mainloop()
+
